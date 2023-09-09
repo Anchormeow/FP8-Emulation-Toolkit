@@ -87,7 +87,7 @@ class MetricLogger(object):
     def update(self, **kwargs):
         for k, v in kwargs.items():
             if isinstance(v, torch.Tensor):
-                v = v.item()
+                v = v.item() #取出单元素张量的元素值并返回该值，保持该元素类型不变
             assert isinstance(v, (float, int))
             self.meters[k].update(v)
 
@@ -114,7 +114,7 @@ class MetricLogger(object):
     def add_meter(self, name, meter):
         self.meters[name] = meter
 
-    def log_every(self, iterable, print_freq, header=None):
+    def log_every(self, iterable, print_freq, header=None): #数据集 打印信息间隔
         i = 0
         if not header:
             header = ''

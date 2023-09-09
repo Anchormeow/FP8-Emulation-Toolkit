@@ -82,8 +82,8 @@ class E4M3Emulator(object):
 
         if self.list_exempt_layers is not None :
             for exempt_layer in self.list_exempt_layers:
-                if self.model_qconfig_dict.get(exempt_layer) is not None:
-                    self.model_qconfig_dict.pop(exempt_layer)
+                if self.model_qconfig_dict.get(exempt_layer) is not None: #如果有值
+                    self.model_qconfig_dict.pop(exempt_layer) #删除键值
 
 		# Disable output quantization for these layers,
 		# These layers are followed by precision sensitive layers such as SoftMax
@@ -130,7 +130,7 @@ class E4M3Emulator(object):
         reset_quantization_setup(model, self.model_qconfig_dict)
         # Adding hooks for quantizing input.
         self.hook_handles = add_quantization_hooks(model, self.model_qconfig_dict, is_training=self.is_training)
-        if not self.is_training :
+        if not self.is_training : #此时train为false
             print("e4m3 : quantizing model weights..")
             quantize_model_weights(model, self.model_qconfig_dict)
             set_quantize_weights_flag(model, self.model_qconfig_dict, False)

@@ -199,11 +199,11 @@ def quantize_model(model, optimizer=None, dtype="none", calibrate=False, hw_patc
     if device == 'cuda' and hw_patch.lower() != 'none':
         raise RuntimeError("mpt_emulator: HW patching ops is only alowed on 'cpu' device.")
 
-    mpt = MPTEmulator(device=device, hw_patch=hw_patch) 
+    mpt = MPTEmulator(device=device, hw_patch=hw_patch) #传递参数
     if fuse_bn :
         model = mpt.fuse_bnlayers_and_quantize_model(model)
 
-    if dtype.upper() == 'E5M2':
+    if dtype.upper() == 'E5M2': #传递不同量化方案参数，选择不同量化方案的emulator实例
         mpt.emulator = E5M2Emulator(model, optimizer, None, device=device, verbose=verbose)
     elif dtype.upper() == 'E4M3':
         mpt.emulator = E4M3Emulator(model, optimizer, None, device=device, verbose=verbose)
@@ -212,13 +212,13 @@ def quantize_model(model, optimizer=None, dtype="none", calibrate=False, hw_patc
     elif dtype.upper() == 'HYBRID':
         mpt.emulator = HybridEmulator(model, optimizer, None, device=device, verbose=verbose)
 
-    if calibrate:
+    if calibrate: #是否校准
         print("mpt_emulator : preparing model for calibration") 
         mpt.emulator.is_training = False
-        mpt.set_calibration_qconfig()
+        mpt.set_calibration_qconfig() #权重 输入激活等全部为per tensor
     else:
         mpt.emulator.is_training = False
-        mpt.set_default_inference_qconfig()
+        mpt.set_default_inference_qconfig() #仅输入激活为per tensor
 
     mpt.emulator.enable_hw_patching(mpt.hw_patch.upper())
     mpt.emulator.prepare_model(model, list_exempt_layers, list_layers_output_fused)
@@ -226,6 +226,6 @@ def quantize_model(model, optimizer=None, dtype="none", calibrate=False, hw_patc
         print("mpt_emulator: Following layers are not HW_PATCH'ed they cannot use the hardware configuration: {} ".format(mpt.emulator.list_unpatched))
 
     if verbose :
-        mpt.emulator.print_config()
+        mpt.emulator.print_config() #仅打印信息
 
     return model, mpt

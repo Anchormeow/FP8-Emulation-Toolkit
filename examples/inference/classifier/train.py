@@ -67,17 +67,17 @@ def evaluate(model, criterion, data_loader, device, num_batches=None, print_freq
         model.train()
         header = 'Train:'
 
-    metric_logger = utils.MetricLogger(delimiter="  ")
+    metric_logger = utils.MetricLogger(delimiter="  ") #初始化一个度量记录器，用于记录训练或者测试过程中的一些重要指标
 
-    with torch.no_grad():
+    with torch.no_grad(): #不记录梯度信息，这样可以节省内存，常用在只需要前向传播（如验证和测试阶段）的情况
         batch_id = 0
         for image, target in metric_logger.log_every(data_loader, print_freq, header):
             image = image.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
-            output = model(image)
-            loss = criterion(output, target)
+            output = model(image) #执行一批数据的推理
+            loss = criterion(output, target) #计算预测结果和目标之间的损失
 
-            acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+            acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))  #计算 top-1 和 top-5 准确率
             # FIXME need to take into account that the datasets
             # could have been padded in distributed setup
             batch_size = image.shape[0]
@@ -85,7 +85,7 @@ def evaluate(model, criterion, data_loader, device, num_batches=None, print_freq
             metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
             metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
 
-            if num_batches is not None and batch_id+1 == num_batches:
+            if num_batches is not None and batch_id+1 == num_batches: #已经处理完 num_batches 批数据，则跳出循环
                 break;
             else:
                 batch_id += 1
@@ -94,7 +94,7 @@ def evaluate(model, criterion, data_loader, device, num_batches=None, print_freq
 
     print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5))
-    return metric_logger.acc1.global_avg
+    return metric_logger.acc1.global_avg #返回 top-1 准确率的全局平均值
 
 def main(args):
     if args.apex and amp is None:

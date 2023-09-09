@@ -59,7 +59,7 @@ def get_model_exempt_layers(args, model):
 
     prev_name = None
     prev_module = None
-    for name,module in model.named_modules():
+    for name,module in model.named_modules(): #output融合的有批归一化层且前一层为conv2d层和线性层
         if type(module) == torch.nn.BatchNorm2d and type(prev_module) == torch.nn.Conv2d:
             list_layers_output_fused.append(prev_name)
         if type(module) == torch.nn.Linear:
@@ -76,22 +76,22 @@ def get_data_loaders(args):
     valdir   = os.path.join(args.data_path, 'val')
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                         std=[0.229, 0.224, 0.225])
+                                         std=[0.229, 0.224, 0.225]) #将数据按通道进行计算，将每一个通道的数据先计算出其方差与均值，然后再将其每一个通道内的每一个数据减去均值，再除以方差，得到归一化后的结果。
 
     dataset = datasets.ImageFolder(
         traindir,
         transforms.Compose([
-            transforms.RandomResizedCrop(224),
+            transforms.RandomResizedCrop(224), #裁减为224*224
             transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
+            transforms.ToTensor(), #转换为C W H
             normalize,
         ]))
 
-    train_loader = torch.utils.data.DataLoader(
+    train_loader = torch.utils.data.DataLoader( #数据集 批尺寸 打乱 线程数 锁页内存
             dataset, batch_size=args.batch_size, shuffle=True,
             num_workers=args.workers, pin_memory=True)
 
-    test_loader = torch.utils.data.DataLoader(
+    test_loader = torch.utils.data.DataLoader( #指定256大小 检验批尺寸 不打乱
             datasets.ImageFolder(valdir, transforms.Compose([
                 transforms.Resize(256),
                 transforms.CenterCrop(224),
@@ -175,15 +175,15 @@ if __name__ == "__main__":
         os.makedirs(args.output_dir)
 
     # Create the model and move to GPU
-    device = torch.device(args.device)
+    device = torch.device(args.device) #作为Tensor或者Model被分配到的位置
     # Data loaders and loss function
     train_loader,test_loader = get_data_loaders(args)
     criterion = torch.nn.CrossEntropyLoss()
     # Model
     model = torchvision.models.__dict__[args.model](pretrained=True)
     #model = torchvision.models.__dict__[args.model](weights=model_dict[args.model])
-    model = model.to(device)
-    model.eval()
+    model = model.to(device) #构建的张量或者模型分配到相应的设备上
+    model.eval() #不启用 Batch Normalization 和 Dropout
     #print(model)
 
     print("Evaluating original {} model to establish baseline".format(args.model))
@@ -200,7 +200,7 @@ if __name__ == "__main__":
 
     if args.recalibrate_bn == True:
         print("Calibrating the {} model for {} batches of training data".format(args.model, args.num_calibration_batches))
-        model.train()
+        model.train() #启用 BatchNormalization 和 Dropout
         evaluate(model, criterion, train_loader, device,
                num_batches=args.num_calibration_batches, train=True)
     
